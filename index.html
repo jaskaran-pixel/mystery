@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
   html,body{height:100dvh;min-height:100%;overflow:hidden;font-family:'Quicksand',sans-serif;user-select:none;}
   body{
     background:linear-gradient(135deg,#ffd6ec 0%,#c5b6ff 35%,#b8e6ff 70%,#c4f5e0 100%);
@@ -18,13 +18,13 @@
   }
   @keyframes flow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 
-  #app{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:max(20px,env(safe-area-inset-top)) 22px max(20px,env(safe-area-inset-bottom));}
+  #app{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:max(20px,env(safe-area-inset-top)) 22px max(20px,env(safe-area-inset-bottom));}
   .stage{position:relative;z-index:5;width:100%;max-width:420px;text-align:center;}
   .screen{display:none;}
 
   /* floating poppable confusion emojis */
-  #spark-layer{position:fixed;inset:0;z-index:3;pointer-events:none;}
-  .spark{position:absolute;font-size:26px;pointer-events:auto;cursor:pointer;animation:floatUp linear infinite;will-change:transform;}
+  #spark-layer{position:fixed;inset:0;z-index:0;pointer-events:none;}
+  .spark{position:absolute;font-size:26px;pointer-events:none;animation:floatUp linear infinite;will-change:transform;}
   @keyframes floatUp{from{transform:translateY(10px) rotate(0)}8%{opacity:.85}92%{opacity:.85}to{transform:translateY(-110vh) rotate(120deg);opacity:0}}
   .pop{position:fixed;z-index:6;pointer-events:none;font-size:28px;animation:popOut .55s ease forwards;}
   @keyframes popOut{from{transform:scale(.4);opacity:1}to{transform:scale(1.8);opacity:0}}
@@ -260,6 +260,7 @@ that's why the password.</div>
         <input class="name-input" id="nameInput" placeholder="type your name…" autocomplete="off" />
         <button class="btn" id="nameBtn" style="margin-top:16px;">send it</button>
         <span class="skip" id="skipName">I'll stay a mystery 🫥</span>
+        <span class="skip" id="nameChat">or talk to me live 👀</span>
         <a class="gh-credit" href="https://github.com/jaskaran-pixel" target="_blank" rel="noopener">⚡ GitHub powered · @jaskaran-pixel</a>
       </div>
 
@@ -408,13 +409,15 @@ $('d2').addEventListener('input',()=>{ if($('d2').value) setTimeout(checkUnlock,
 $('unlockBtn').addEventListener('click', checkUnlock);
 
 /* ================= INTRO + dodging button ================= */
+function revealIntroBtn(){
+  $('introTag').style.transition='opacity .5s ease'; $('introTag').style.opacity='1';
+  $('introBtn').style.transition='opacity .5s ease'; $('introBtn').style.opacity='1';
+}
 function runIntro(){
   $('exit').style.display='flex';
   show('intro');
-  type($('introTitle'),"wait… you're actually here?\nI can't believe it.",()=>{
-    $('introTag').style.transition='opacity .5s ease'; $('introTag').style.opacity='1';
-    setTimeout(()=>{ $('introBtn').style.transition='opacity .5s ease'; $('introBtn').style.opacity='1'; },400);
-  });
+  type($('introTitle'),"wait… you're actually here?\nI can't believe it.", revealIntroBtn);
+  setTimeout(revealIntroBtn, 3200); /* fallback: button never stays invisible */
 }
 let dodge=0;
 $('introBtn').addEventListener('click',()=>{
@@ -512,7 +515,7 @@ function runNote(){
   show('note');
   type($('noteText'),NOTE_TEXT,()=>{ $('noteBtn').style.transition='opacity .5s ease'; $('noteBtn').style.opacity='1'; },22);
 }
-$('noteBtn').addEventListener('click',()=>{ tapSound(); show('name'); $('nameInput').focus(); });
+$('noteBtn').addEventListener('click',()=>{ tapSound(); show('name'); });
 
 /* ================= NAME BOX ================= */
 function submitName(){
@@ -524,6 +527,7 @@ function submitName(){
 $('nameBtn').addEventListener('click', submitName);
 $('nameInput').addEventListener('keydown',e=>{ if(e.key==='Enter') submitName(); });
 $('skipName').addEventListener('click',()=>{ track("name","(skipped)"); tapSound(); goEnd("a mystery to the end. 🫥\nrespect."); });
+$('nameChat').addEventListener('click',()=>{ tapSound(); openChat(); });
 
 /* ================= END ================= */
 function goEnd(line){
@@ -712,9 +716,17 @@ if(TAWK_SRC){
   (function(){ var s=document.createElement("script"); s.async=true; s.src=TAWK_SRC;
     s.charset="UTF-8"; s.setAttribute("crossorigin","*"); document.head.appendChild(s); })();
 }
+function _openTawk(){ try{ Tawk_API.showWidget(); }catch(e){} try{ Tawk_API.maximize(); }catch(e){} }
 function openChat(){
-  if(window.Tawk_API && Tawk_API.maximize){ try{ Tawk_API.showWidget(); }catch(e){} Tawk_API.maximize(); }
-  else { toast("the chat goes live once it's set up 👀"); }
+  if(!TAWK_SRC){ toast("chat not set up yet 👀"); return; }
+  if(window.Tawk_API && Tawk_API.maximize){ _openTawk(); return; }
+  toast("opening chat…");
+  let tries=0;
+  const iv=setInterval(()=>{
+    tries++;
+    if(window.Tawk_API && Tawk_API.maximize){ clearInterval(iv); _openTawk(); }
+    else if(tries>25){ clearInterval(iv); toast("chat is taking a sec, tap again"); }
+  },300);
 }
 $('chatBtn').addEventListener('click',()=>{ tapSound(); openChat(); });
 
@@ -724,6 +736,10 @@ $('mute').addEventListener('click',()=>{
   $('mute').textContent=muted?'🔇':'🔊';
 });
 document.addEventListener('visibilitychange',()=>{ if(actx&&actx.state==='suspended') actx.resume(); });
+document.addEventListener('gesturestart', e=>e.preventDefault());
+document.addEventListener('dblclick', e=>e.preventDefault(), {passive:false});
+let _lastTouch=0;
+document.addEventListener('touchend', e=>{ const now=Date.now(); if(now-_lastTouch<=300){ e.preventDefault(); } _lastTouch=now; }, {passive:false});
 </script>
 </body>
 </html>
