@@ -420,24 +420,20 @@ function runIntro(){
   setTimeout(revealIntroBtn, 3200); /* fallback: button never stays invisible */
 }
 let dodge=0;
+const PRESS_LINES=[
+  "hm. press harder 🤨",
+  "no, like… really press it 😐",
+  "ok one more time 🫣",
+  "don't break your screen 😭",
+];
 $('introBtn').addEventListener('click',()=>{
   const b=$('introBtn');
-  if(dodge===0){
+  if(dodge < PRESS_LINES.length){
     oopsSound();
-    const r=b.getBoundingClientRect();
-    const dx=(Math.random()<.5?-1:1)*(55+Math.random()*55);
-    const dy=(Math.random()<.5?-1:1)*(40+Math.random()*45);
-    let x=r.left+dx, y=r.top+dy;
-    x=Math.max(12, Math.min(window.innerWidth - r.width - 12, x));
-    y=Math.max(90, Math.min(window.innerHeight - r.height - 40, y));
-    b.style.position='fixed';
-    b.style.left=x+'px'; b.style.top=y+'px';
     b.classList.remove('nudge');
-    b.textContent='oops 🫣 too slow'; dodge=1;
-  }else if(dodge===1){
-    popSound();
-    b.style.position=''; b.style.left=''; b.style.top='';
-    b.textContent='ok ok… NOW tap me 😐'; dodge=2;
+    b.classList.add('jig'); setTimeout(()=>b.classList.remove('jig'),360);
+    b.textContent=PRESS_LINES[dodge];
+    dodge++;
   }else{
     tapSound(); runTrap();
   }
